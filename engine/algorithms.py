@@ -206,3 +206,103 @@ def round_robin(process_list, quantum):
 
 
 
+def priority_non_preemptive(process_list):
+    processes = sorted(process_list, key=lambda x: x["arrival"])
+    completed = []
+    gantt_chart = []
+    time = 0
+    n = len(processes)
+
+    while len(completed) < n:
+        available = [p for p in processes if p["arrival"] <= time and p not in completed]
+
+        if not available:
+            time += 1
+            continue
+
+        current = min(available, key=lambda x: x["priority"])
+        start = time
+        end = time + current["burst"]
+
+        gantt_chart.append({"pid": current["pid"], "start": start, "end": end})
+
+        current["completion"] = end
+        current["turnaround"] = end - current["arrival"]
+        current["waiting"] = current["turnaround"] - current["burst"]
+        current["response"] = start - current["arrival"]
+
+        completed.append(current)
+        time = end
+
+    results = [{
+        "pid": p["pid"],
+        "arrival": p["arrival"],
+        "burst": p["burst"],
+        "priority": p["priority"],
+        "completion": p["completion"],
+        "turnaround": p["turnaround"],
+        "waiting": p["waiting"],
+        "response": p["response"]
+    } for p in completed]
+
+    return gantt_chart, results
+
+
+
+
+def priority_preemptive(process_list):
+    processes = [
+        {"pid": p["pid"], "arrival": p["arrival"], "burst": p["burst"],
+         "priority": p["priority"], "remaining": p["burst"]}
+        for p in process_list
+    ]
+
+    time = 0
+    completed = 0
+    n = len(processes)
+    gantt_chart = []
+    last_pid = None
+    response = {p["pid"]: None for p in processes}
+
+    while completed < n:
+        available = [p for p in processes if p["arrival"] <= time and p["remaining"] > 0]
+
+        if not available:
+            time += 1
+            continue
+
+        current = min(available, key=lambda x: x["priority"])
+
+        if current["pid"] != last_pid:
+            gantt_chart.append({"pid": current["pid"], "start": time})
+            last_pid = current["pid"]
+
+        if response[current["pid"]] is None:
+            response[current["pid"]] = time - current["arrival"]
+
+        current["remaining"] -= 1
+        time += 1
+        gantt_chart[-1]["end"] = time
+
+        if current["remaining"] == 0:
+            current["completion"] = time
+            current["turnaround"] = time - current["arrival"]
+            current["waiting"] = current["turnaround"] - current["burst"]
+            current["response"] = response[current["pid"]]
+            completed += 1
+
+    results = [{
+        "pid": p["pid"],
+        "arrival": p["arrival"],
+        "burst": p["burst"],
+        "priority": p["priority"],
+        "completion": p["completion"],
+        "turnaround": p["turnaround"],
+        "waiting": p["waiting"],
+        "response": p["response"]
+    } for p in processes]
+
+    return gantt_chart, results
+
+
+
