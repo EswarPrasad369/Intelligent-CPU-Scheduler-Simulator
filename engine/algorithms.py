@@ -132,3 +132,77 @@ def sjf_non_preemptive(process_list):
 
     return gantt_chart, results
  
+
+
+
+from collections import deque
+
+def round_robin(process_list, quantum):
+    processes = [
+        {"pid": p["pid"], "arrival": p["arrival"], "burst": p["burst"], "remaining": p["burst"]}
+        for p in process_list
+    ]
+
+    processes.sort(key=lambda x: x["arrival"])
+
+    time = 0
+    queue = deque()
+    gantt_chart = []
+    completed_count = 0
+    n = len(processes)
+    last_pid = None
+    i = 0
+    response_time = {p["pid"]: None for p in processes}
+
+    while completed_count < n:
+        while i < n and processes[i]["arrival"] <= time:
+            queue.append(processes[i])
+            i += 1
+
+        if not queue:
+            time += 1
+            continue
+
+        current = queue.popleft()
+
+        if response_time[current["pid"]] is None:
+            response_time[current["pid"]] = time - current["arrival"]
+
+        if current["pid"] != last_pid:
+            gantt_chart.append({"pid": current["pid"], "start": time})
+            last_pid = current["pid"]
+
+        exec_time = min(quantum, current["remaining"])
+        current["remaining"] -= exec_time
+        time += exec_time
+
+        gantt_chart[-1]["end"] = time
+
+        while i < n and processes[i]["arrival"] <= time:
+            queue.append(processes[i])
+            i += 1
+
+        if current["remaining"] == 0:
+            current["completion"] = time
+            current["turnaround"] = current["completion"] - current["arrival"]
+            current["waiting"] = current["turnaround"] - current["burst"]
+            current["response"] = response_time[current["pid"]]
+            completed_count += 1
+        else:
+            queue.append(current)
+
+    results = [{
+        "pid": p["pid"],
+        "arrival": p["arrival"],
+        "burst": p["burst"],
+        "completion": p["completion"],
+        "turnaround": p["turnaround"],
+        "waiting": p["waiting"],
+        "response": p["response"]
+    } for p in processes]
+
+    return gantt_chart, results
+
+
+
+
