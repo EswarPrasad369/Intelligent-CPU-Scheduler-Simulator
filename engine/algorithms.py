@@ -82,3 +82,53 @@ def sjf_non_preemptive(process_list):
 
     return gantt_chart, results
  
+
+
+ def srtf(process_list):
+    processes = [
+        {"pid": p["pid"], "arrival": p["arrival"], "burst": p["burst"], "remaining": p["burst"]}
+        for p in process_list
+    ]
+
+    time = 0
+    completed = 0
+    n = len(processes)
+    gantt_chart = []
+    last_pid = None
+
+    while completed < n:
+        available = [p for p in processes if p["arrival"] <= time and p["remaining"] > 0]
+
+        if not available:
+            time += 1
+            continue
+
+        current = min(available, key=lambda x: x["remaining"])
+
+        if current["pid"] != last_pid:
+            gantt_chart.append({"pid": current["pid"], "start": time})
+            last_pid = current["pid"]
+
+        current["remaining"] -= 1
+        time += 1
+        gantt_chart[-1]["end"] = time
+
+        if current["remaining"] == 0:
+            current["completion"] = time
+            current["turnaround"] = current["completion"] - current["arrival"]
+            current["waiting"] = current["turnaround"] - current["burst"]
+            current["response"] = gantt_chart[-1]["start"] - current["arrival"]
+            completed += 1
+
+    results = [{
+        "pid": p["pid"],
+        "arrival": p["arrival"],
+        "burst": p["burst"],
+        "completion": p["completion"],
+        "turnaround": p["turnaround"],
+        "waiting": p["waiting"],
+        "response": p["response"]
+    } for p in processes]
+
+    return gantt_chart, results
+ 
