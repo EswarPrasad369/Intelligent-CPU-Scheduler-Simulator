@@ -33,3 +33,52 @@ def fcfs(process_list):
         current_time = end_time
 
     return gantt_chart, results
+
+
+
+
+
+def sjf_non_preemptive(process_list):
+    processes = sorted(process_list, key=lambda x: x['arrival'])
+    time = 0
+    completed = []
+    gantt_chart = []
+
+    while len(completed) < len(processes):
+        available = [p for p in processes if p['arrival'] <= time and p not in completed]
+        if not available:
+            time += 1
+            continue
+
+        current = min(available, key=lambda x: x['burst'])
+        start_time = time
+        end_time = time + current['burst']
+
+        gantt_chart.append({
+            "pid": current['pid'],
+            "start": start_time,
+            "end": end_time
+        })
+
+        current['completion'] = end_time
+        current['turnaround'] = end_time - current['arrival']
+        current['waiting'] = current['turnaround'] - current['burst']
+        current['response'] = start_time - current['arrival']
+
+        completed.append(current)
+        time = end_time
+
+    results = []
+    for p in completed:
+        results.append({
+            "pid": p["pid"],
+            "arrival": p["arrival"],
+            "burst": p["burst"],
+            "completion": p["completion"],
+            "turnaround": p["turnaround"],
+            "waiting": p["waiting"],
+            "response": p["response"],
+        })
+
+    return gantt_chart, results
+ 
