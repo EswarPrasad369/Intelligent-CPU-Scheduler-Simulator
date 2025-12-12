@@ -84,7 +84,7 @@ def sjf_non_preemptive(process_list):
  
 
 
- def srtf(process_list):
+def srtf(process_list):
     processes = [
         {"pid": p["pid"], "arrival": p["arrival"], "burst": p["burst"], "remaining": p["burst"]}
         for p in process_list
